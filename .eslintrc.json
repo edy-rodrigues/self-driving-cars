@@ -1,0 +1,5 @@
+{
+  "extends": [
+    "@holding-fpass/eslint-config/react"
+  ]
+}

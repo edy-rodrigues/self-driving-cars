@@ -7,7 +7,7 @@ export class Point {
     this.y = y;
   }
 
-  public draw(context: CanvasRenderingContext2D, size: number = 18, color: string = "black"): void {
+  public draw(context: CanvasRenderingContext2D, size: number = 18, color: string = 'black'): void {
     const radius: number = size / 2;
 
     context.beginPath();

@@ -1,5 +1,5 @@
-import { Point } from '../primitives/point.ts';
-import { Segment } from '../primitives/segment.ts';
+import type { Point } from '../primitives/point.ts';
+import type { Segment } from '../primitives/segment.ts';
 
 export class Graph {
   public points: Point[] = [];
@@ -25,7 +25,7 @@ export class Graph {
   }
 
   public containsPoint(point: Point): boolean {
-    return !!this.points.find(p => p.equals(point));
+    return !!this.points.find((p) => p.equals(point));
   }
 
   public tryAddPoint(point: Point): boolean {
@@ -53,7 +53,7 @@ export class Graph {
   }
 
   public containsSegment(segment: Segment): boolean {
-    return !!this.segments.find((s) => s.equals(segment))
+    return !!this.segments.find((s) => s.equals(segment));
   }
 
   public getSegmentsWithPoint(point: Point): Segment[] {

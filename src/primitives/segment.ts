@@ -1,4 +1,4 @@
-import { Point } from './point.ts';
+import type { Point } from './point.ts';
 
 export class Segment {
   public p1: Point;
@@ -9,7 +9,7 @@ export class Segment {
     this.p2 = p2;
   }
 
-  public draw(context: CanvasRenderingContext2D, width: number = 2, color: string = "black"): void {
+  public draw(context: CanvasRenderingContext2D, width: number = 2, color: string = 'black'): void {
     context.beginPath();
     context.lineWidth = width;
     context.strokeStyle = color;

@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@holding-fpass/eslint-config": "^1.1.20",
+    "eslint": "^8.56.0",
     "typescript": "^5.2.2",
     "vite": "^5.0.8"
   }

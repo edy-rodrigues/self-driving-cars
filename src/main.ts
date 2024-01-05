@@ -1,4 +1,4 @@
-import './style.css'
+import './style.css';
 import { Graph } from './math/graph.ts';
 import { Point } from './primitives/point.ts';
 import { Segment } from './primitives/segment.ts';
@@ -53,9 +53,7 @@ graph.draw(context);
 // Listeners
 addPointButton.addEventListener('click', (): void => {
   const success = graph.tryAddPoint(
-    new Point(
-    Math.random() * canvas.width, Math.random() * canvas.height
-    )
+    new Point(Math.random() * canvas.width, Math.random() * canvas.height),
   );
 
   context.clearRect(0, 0, canvas.width, canvas.height);
@@ -88,7 +86,7 @@ addSegmentButton.addEventListener('click', (): void => {
   console.log(success);
 });
 
-removeSegmentButton.addEventListener("click", (): void => {
+removeSegmentButton.addEventListener('click', (): void => {
   if (graph.segments.length === 0) {
     console.log('No segments');
     return;
@@ -107,5 +105,3 @@ resetGameButton.addEventListener('click', (): void => {
   context.clearRect(0, 0, canvas.width, canvas.height);
   graph.draw(context);
 });
-
-
