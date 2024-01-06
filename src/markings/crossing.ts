@@ -10,13 +10,13 @@ export declare namespace ICrossing {
 }
 
 export class Crossing extends Marking {
-  private readonly borders: Segment[];
+  // private readonly borders: Segment[];
 
   public constructor(center: Point, directionVector: Point, width: number, height: number) {
     super(center, directionVector, width, height);
 
     this.type = 'crossing';
-    this.borders = [this.polygon.segments[0], this.polygon.segments[2]];
+    // this.borders = [this.polygon.segments[0], this.polygon.segments[2]];
   }
 
   public draw(params: ICrossing.IDrawParams): void {

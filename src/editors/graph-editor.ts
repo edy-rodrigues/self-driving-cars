@@ -85,7 +85,7 @@ export class GraphEditor {
   }
 
   public enable() {
-    this.addEventListeners();
+    // this.addEventListeners();
   }
 
   public disable() {

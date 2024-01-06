@@ -6,6 +6,8 @@ import { StartEditor } from '../editors/start-editor.ts';
 import { StopEditor } from '../editors/stop-editor.ts';
 import { TargetEditor } from '../editors/target-editor.ts';
 import { YieldEditor } from '../editors/yield-editor.ts';
+import { Car } from '../items/car.ts';
+import { Road } from '../items/road.ts';
 import { Graph } from '../math/graph.ts';
 import type { Point } from '../primitives/point.ts';
 import { Utils } from './utils.ts';
@@ -46,12 +48,17 @@ export class Engine {
   public static viewport: Viewport;
   public static world: World;
   public static oldGraphHash: string;
+  public static car: Car;
+  public static road: Road;
 
-  public static start() {
+  public static start(): void {
     const app = document.querySelector('#app')! as HTMLDivElement;
 
     const canvas = document.createElement('canvas');
     Engine.canvas = canvas;
+
+    Engine.road = new Road(canvas.width / 2, canvas.width * 0.9);
+    Engine.car = new Car(Engine.road.getLaneCenter(1), 100, 30, 50);
 
     const controllers = document.createElement('div');
     controllers.classList.add('controllers');
@@ -226,8 +233,8 @@ export class Engine {
     }
   }
 
-  public static animate() {
-    const { graph, tools, viewport, context, world } = Engine;
+  public static animate(): void {
+    const { graph, tools, viewport, context, world, car, road } = Engine;
 
     viewport.reset();
 
@@ -244,6 +251,15 @@ export class Engine {
     for (const tool of Object.values(tools) as IEngine.ITool[]) {
       tool.editor.display();
     }
+
+    car.update();
+    context.save();
+    context.translate(0, -car.y);
+
+    road.draw({ context });
+    car.draw({ context });
+
+    context.restore();
 
     requestAnimationFrame(Engine.animate);
   }
