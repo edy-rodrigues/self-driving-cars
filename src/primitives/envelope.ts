@@ -1,7 +1,7 @@
 import { Utils } from '../engine/utils.ts';
-import type { Point } from './point.ts';
+import { Point } from './point.ts';
 import { Polygon } from './polygon.ts';
-import type { Segment } from './segment.ts';
+import { Segment } from './segment.ts';
 
 export declare namespace IEnvelop {
   interface IDrawParams {
@@ -12,12 +12,26 @@ export declare namespace IEnvelop {
 }
 
 export class Envelope {
-  private readonly skeleton: Segment;
+  public skeleton: Segment;
   public polygon: Polygon;
 
-  public constructor(skeleton: Segment, width: number, roundness: number = 1) {
+  public constructor(skeleton?: Segment, width?: number, roundness: number = 1) {
+    if (!skeleton || !width) {
+      this.skeleton = new Segment(new Point(0, 0), new Point(0, 0));
+      this.polygon = new Polygon([new Point(0, 0)]);
+      return;
+    }
+
     this.skeleton = skeleton;
     this.polygon = this.generatePolygon(width, roundness);
+  }
+
+  public static load(envelope: Envelope): Envelope {
+    const newEnvelope = new Envelope();
+    newEnvelope.skeleton = new Segment(envelope.skeleton.p1, envelope.skeleton.p2);
+    newEnvelope.polygon = Polygon.load(envelope.polygon);
+
+    return newEnvelope;
   }
 
   public draw(params: IEnvelop.IDrawParams): void {

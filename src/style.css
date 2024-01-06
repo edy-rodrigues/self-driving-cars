@@ -23,6 +23,29 @@ canvas {
   background-color: #2F8;
 }
 
-button {
-  color: black;
+#app .controllers {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+#app .controllers button, #app .controllers .file-input-label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  font-size: 20px;
+  border: none;
+  background-color: #d1d1d1;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#app .controllers button:hover {
+  box-shadow: 0 0 6px 1px darkgray;
+  background-color: #c1c1c1;
+}
+
+#app .controllers input {
+  display: none;
 }

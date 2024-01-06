@@ -5,7 +5,6 @@ import { Segment } from './segment.ts';
 export declare namespace IPolygon {
   interface IDrawParams {
     context: CanvasRenderingContext2D;
-    viewPoint: Point;
     stroke?: CanvasFillStrokeStyles['strokeStyle'];
     lineWidth?: number;
     fill?: CanvasFillStrokeStyles['fillStyle'];
@@ -15,7 +14,7 @@ export declare namespace IPolygon {
 
 export class Polygon {
   public points: Point[];
-  private segments: Segment[];
+  public readonly segments: Segment[];
 
   public constructor(points: Point[]) {
     this.points = points;
@@ -24,6 +23,10 @@ export class Polygon {
     for (let i = 1; i <= this.points.length; i++) {
       this.segments.push(new Segment(this.points[i - 1], this.points[i % this.points.length]));
     }
+  }
+
+  public static load(polygon: Polygon): Polygon {
+    return new Polygon(polygon.points.map((point: Point) => new Point(point.x, point.y)));
   }
 
   public static union(polygons: Polygon[]): Segment[] {

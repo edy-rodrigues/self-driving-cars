@@ -1,17 +1,25 @@
+import { Utils } from '../engine/utils.ts';
+import type { Viewport } from '../engine/viewport.ts';
 import type { Graph } from '../math/graph.ts';
 import type { Point } from '../primitives/point.ts';
 import { Segment } from '../primitives/segment.ts';
-import type { Viewport } from './viewport.ts';
 
 export class GraphEditor {
   private readonly viewport: Viewport;
   private readonly canvas: HTMLCanvasElement;
   private readonly context: CanvasRenderingContext2D;
   private readonly graph: Graph;
+
   private mousePoint: Point | null;
   private selectedPoint: Point | null;
   private hoveredPoint: Point | null;
   private draggingPoint: boolean;
+
+  // Listeners methods
+  private boundMouseDown: (event: MouseEvent) => void;
+  private boundMouseMove: (event: MouseEvent) => void;
+  private boundMouseUp: (event: MouseEvent) => void;
+  private boundContextMenu: (event: Event) => void;
 
   public constructor(viewport: Viewport, graph: Graph) {
     this.viewport = viewport;
@@ -24,7 +32,10 @@ export class GraphEditor {
     this.hoveredPoint = null;
     this.draggingPoint = false;
 
-    this.addEventListeners();
+    this.boundMouseDown = () => {};
+    this.boundMouseMove = () => {};
+    this.boundMouseUp = () => {};
+    this.boundContextMenu = () => {};
   }
 
   public display() {
@@ -73,16 +84,33 @@ export class GraphEditor {
     }
   }
 
-  private addEventListeners() {
-    this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
+  public enable() {
+    this.addEventListeners();
+  }
 
-    this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+  public disable() {
+    this.removeEventListeners();
+    this.selectedPoint = null;
+    this.hoveredPoint = null;
+  }
 
-    this.canvas.addEventListener('mouseup', (): void => {
-      this.draggingPoint = false;
-    });
+  private addEventListeners(): void {
+    this.boundMouseDown = this.handleMouseDown.bind(this);
+    this.boundMouseMove = this.handleMouseMove.bind(this);
+    this.boundMouseUp = this.handleMouseUp.bind(this);
+    this.boundContextMenu = this.handleContextMenu.bind(this);
 
-    this.canvas.addEventListener('contextmenu', (event: Event): void => event.preventDefault());
+    this.canvas.addEventListener('mousedown', this.boundMouseDown);
+    this.canvas.addEventListener('mousemove', this.boundMouseMove);
+    this.canvas.addEventListener('mouseup', this.boundMouseUp);
+    this.canvas.addEventListener('contextmenu', this.boundContextMenu);
+  }
+
+  private removeEventListeners(): void {
+    this.canvas.removeEventListener('mousedown', this.boundMouseDown);
+    this.canvas.removeEventListener('mousemove', this.boundMouseMove);
+    this.canvas.removeEventListener('mouseup', this.boundMouseUp);
+    this.canvas.removeEventListener('contextmenu', this.boundContextMenu);
   }
 
   private handleMouseDown(event: MouseEvent): void {
@@ -113,14 +141,23 @@ export class GraphEditor {
   private handleMouseMove(event: MouseEvent): void {
     this.mousePoint = this.viewport.getMouse(event, true);
 
-    this.hoveredPoint = this.graph.getNearestPoint({
-      point: this.mousePoint,
+    this.hoveredPoint = Utils.getNearestPoint({
+      point: this.mousePoint!,
+      points: this.graph.points,
       threshold: 10 * this.viewport.zoom,
     });
 
     if (this.draggingPoint) {
-      this.selectedPoint!.x = this.mousePoint.x;
-      this.selectedPoint!.y = this.mousePoint.y;
+      this.selectedPoint!.x = this.mousePoint!.x;
+      this.selectedPoint!.y = this.mousePoint!.y;
     }
+  }
+
+  private handleMouseUp() {
+    this.draggingPoint = false;
+  }
+
+  private handleContextMenu(event: Event): void {
+    event.preventDefault();
   }
 }

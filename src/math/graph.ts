@@ -1,13 +1,7 @@
-import { Utils } from '../engine/utils.ts';
 import { Point } from '../primitives/point.ts';
 import { Segment } from '../primitives/segment.ts';
 
-export declare namespace IGraph {
-  interface IGetNearestPointParams {
-    point: Point;
-    threshold?: number;
-  }
-}
+export declare namespace IGraph {}
 
 export class Graph {
   public points: Point[] = [];
@@ -114,23 +108,5 @@ export class Graph {
   public dispose() {
     this.points = [];
     this.segments = [];
-  }
-
-  public getNearestPoint(params: IGraph.IGetNearestPointParams): Point | null {
-    const { point, threshold = Number.MAX_SAFE_INTEGER } = params;
-
-    let minimumDistance = Number.MAX_SAFE_INTEGER;
-    let nearest: Point | null = null;
-
-    for (const pointIterator of this.points) {
-      const distance = Utils.getDistance(pointIterator, point);
-
-      if (distance < minimumDistance && distance < threshold) {
-        minimumDistance = distance;
-        nearest = pointIterator;
-      }
-    }
-
-    return nearest;
   }
 }

@@ -18,13 +18,13 @@ export class Viewport {
   public center: Point;
   private drag: IViewport.IDragProps;
 
-  public constructor(canvas: HTMLCanvasElement) {
+  public constructor(canvas: HTMLCanvasElement, zoom: number = 1, offset?: Point) {
     this.canvas = canvas;
     this.context = this.canvas.getContext('2d')!;
 
-    this.zoom = 1;
+    this.zoom = zoom;
     this.center = new Point(this.canvas.width / 2, this.canvas.height / 2);
-    this.offset = Utils.scale(this.center, -1);
+    this.offset = offset ? offset : Utils.scale(this.center, -1);
 
     this.drag = {
       start: new Point(0, 0),

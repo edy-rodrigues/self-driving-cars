@@ -38,7 +38,7 @@ export class Tree {
       const size: number = Utils.lerp(this.size, 40, t);
 
       const polygon = this.generateLevel(point, size);
-      polygon.draw({ context, viewPoint, fill: color, stroke: 'rgba(0, 0, 0, 0)' });
+      polygon.draw({ context, fill: color, stroke: 'rgba(0, 0, 0, 0)' });
     }
   }
 

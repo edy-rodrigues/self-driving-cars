@@ -18,6 +18,10 @@ export class Building {
     this.height = heightCoefficient;
   }
 
+  public static load(building: Building): Building {
+    return new Building(Polygon.load(building.base), building.height);
+  }
+
   public draw(params: IBuilding.IDrawParams): void {
     const { context, viewPoint } = params;
 
@@ -62,21 +66,18 @@ export class Building {
 
     this.base.draw({
       context,
-      viewPoint,
       stroke: 'rgba(0, 0, 0, 0.2)',
       lineWidth: 20,
     });
     for (const side of sides) {
       side.draw({
         context,
-        viewPoint,
         fill: 'white',
         stroke: '#aaa',
       });
     }
     ceiling.draw({
       context,
-      viewPoint,
       stroke: 'white',
       fill: 'white',
       lineWidth: 6,
@@ -84,7 +85,6 @@ export class Building {
     for (const roofPolygon of roofPolygons) {
       roofPolygon.draw({
         context,
-        viewPoint,
         fill: '#d44',
         stroke: '#c44',
         lineWidth: 8,

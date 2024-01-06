@@ -7,6 +7,7 @@ export declare namespace ISegment {
     width?: number;
     color?: string;
     dash?: number[];
+    cap?: CanvasLineCap;
   }
 }
 
@@ -20,11 +21,12 @@ export class Segment {
   }
 
   public draw(params: ISegment.IDrawParams): void {
-    const { context, dash = [], width = 2, color = 'black' } = params;
+    const { context, dash = [], width = 2, color = 'black', cap = 'butt' } = params;
 
     context.beginPath();
     context.lineWidth = width;
     context.strokeStyle = color;
+    context.lineCap = cap;
     context.setLineDash(dash);
     context.moveTo(this.p1.x, this.p1.y);
     context.lineTo(this.p2.x, this.p2.y);

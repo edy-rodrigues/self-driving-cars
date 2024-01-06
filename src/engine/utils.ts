@@ -1,6 +1,57 @@
 import { Point } from '../primitives/point.ts';
+import type { Segment } from '../primitives/segment.ts';
+
+export declare namespace IUtils {
+  interface IGetNearestPointParams {
+    point: Point;
+    points: Point[];
+    threshold?: number;
+  }
+
+  interface IGetNearestSegmentParams {
+    point: Point;
+    segments: Segment[];
+    threshold?: number;
+  }
+}
 
 export class Utils {
+  public static getNearestPoint(params: IUtils.IGetNearestPointParams): Point | null {
+    const { point, points, threshold = Number.MAX_SAFE_INTEGER } = params;
+
+    let minimumDistance: number = Number.MAX_SAFE_INTEGER;
+    let nearest: Point | null = null;
+
+    for (const pointIterator of points) {
+      const distance: number = Utils.getDistance(pointIterator, point);
+
+      if (distance < minimumDistance && distance < threshold) {
+        minimumDistance = distance;
+        nearest = pointIterator;
+      }
+    }
+
+    return nearest;
+  }
+
+  public static getNearestSegment(params: IUtils.IGetNearestSegmentParams): Segment | null {
+    const { point, segments, threshold = Number.MAX_SAFE_INTEGER } = params;
+
+    let minimumDistance: number = Number.MAX_SAFE_INTEGER;
+    let nearest: Segment | null = null;
+
+    for (const segmentIterator of segments) {
+      const distance: number = segmentIterator.distanceToPoint(point);
+
+      if (distance < minimumDistance && distance < threshold) {
+        minimumDistance = distance;
+        nearest = segmentIterator;
+      }
+    }
+
+    return nearest;
+  }
+
   public static add(pointOne: Point, pointTwo: Point): Point {
     return new Point(pointOne.x + pointTwo.x, pointOne.y + pointTwo.y);
   }
@@ -31,6 +82,10 @@ export class Utils {
 
   public static magnitude(point: Point): number {
     return Math.hypot(point.x, point.y);
+  }
+
+  public static perpendicular(point: Point): Point {
+    return new Point(-point.y, point.x);
   }
 
   public static average(pointOne: Point, pointTwo: Point): Point {
@@ -83,5 +138,12 @@ export class Utils {
   public static getRandomColor(): string {
     const hue: number = 290 + Math.random() * 260;
     return `hsl(${hue}, 100%, 60%)`;
+  }
+
+  public static createButton(icon: string) {
+    const button = document.createElement('button');
+    button.innerHTML = icon;
+
+    return button;
   }
 }

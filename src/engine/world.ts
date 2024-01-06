@@ -1,6 +1,15 @@
 import { Building } from '../items/building.ts';
 import { Tree } from '../items/tree.ts';
-import type { Graph } from '../math/graph.ts';
+import { MarkingLoader } from '../loaders/marking-loader.ts';
+import type { Crossing } from '../markings/crossing.ts';
+import { Light } from '../markings/light.ts';
+import type { Marking } from '../markings/marking.ts';
+import type { Parking } from '../markings/parking.ts';
+import type { Start } from '../markings/start.ts';
+import type { Stop } from '../markings/stop.ts';
+import type { Target } from '../markings/target.ts';
+import type { Yield } from '../markings/yield.ts';
+import { Graph } from '../math/graph.ts';
 import { Envelope } from '../primitives/envelope.ts';
 import { Point } from '../primitives/point.ts';
 import { Polygon } from '../primitives/polygon.ts';
@@ -8,6 +17,17 @@ import { Segment } from '../primitives/segment.ts';
 import { Utils } from './utils.ts';
 
 export declare namespace IWorld {
+  type TMarking = Stop | Crossing | Start | Parking | Light | Target | Yield;
+  type TTypeMarking =
+    | 'crossing'
+    | 'light'
+    | 'marking'
+    | 'parking'
+    | 'start'
+    | 'stop'
+    | 'target'
+    | 'yield';
+
   interface IDrawParams {
     context: CanvasRenderingContext2D;
     viewPoint: Point;
@@ -15,17 +35,23 @@ export declare namespace IWorld {
 }
 
 export class World {
-  private readonly graph: Graph;
+  public zoom: number;
+  public offset: Point;
+  public graph: Graph;
+
   private envelopes: Envelope[];
   private roadBorders: Segment[];
-  private readonly roadWidth: number;
-  private readonly roadRoundness: number;
-  private readonly buildingWidth: number;
-  private readonly buildingMinLength: number;
-  private readonly spacing: number;
-  private readonly treeSize: number;
+  public roadWidth: number;
+  private roadRoundness: number;
+  private buildingWidth: number;
+  private buildingMinLength: number;
+  private spacing: number;
+  private treeSize: number;
   private buildings: Building[] = [];
   private trees: Tree[] = [];
+  public laneGuides: Segment[];
+  public markings: IWorld.TMarking[] = [];
+  public frameCount: number;
 
   public constructor(
     graph: Graph,
@@ -37,22 +63,55 @@ export class World {
     treeSize: number = 160,
   ) {
     this.graph = graph;
+    this.zoom = 1;
+    this.offset = new Point(0, 0);
 
     this.roadWidth = roadWidth;
     this.roadRoundness = roadRoundness;
-
     this.buildingWidth = buildingWidth;
     this.buildingMinLength = buildingMinLength;
     this.spacing = spacing;
     this.treeSize = treeSize;
 
     this.buildings = [];
-
     this.envelopes = [];
     this.roadBorders = [];
     this.trees = [];
+    this.laneGuides = [];
+
+    this.markings = [];
+
+    this.frameCount = 0;
 
     this.generate();
+  }
+
+  public static load(world: World): World {
+    const newWorld: World = new World(new Graph());
+
+    newWorld.graph = Graph.load(world.graph);
+
+    newWorld.roadWidth = world.roadWidth;
+    newWorld.roadRoundness = world.roadRoundness;
+    newWorld.buildingWidth = world.buildingWidth;
+    newWorld.buildingMinLength = world.buildingMinLength;
+    newWorld.spacing = world.spacing;
+    newWorld.treeSize = world.treeSize;
+
+    newWorld.envelopes = world.envelopes.map((envelope: Envelope) => Envelope.load(envelope));
+    newWorld.roadBorders = world.roadBorders.map(
+      (roadBord: Segment) => new Segment(roadBord.p1, roadBord.p2),
+    );
+    newWorld.buildings = world.buildings.map((building: Building) => Building.load(building));
+    newWorld.trees = world.trees.map((tree: Tree) => new Tree(tree.center, world.treeSize));
+    newWorld.laneGuides = world.laneGuides.map(
+      (laneGuide: Segment) => new Segment(laneGuide.p1, laneGuide.p2),
+    );
+    newWorld.markings = world.markings.map((marking: Marking) => MarkingLoader.load(marking));
+    newWorld.zoom = world.zoom;
+    newWorld.offset = new Point(world.offset.x, world.offset.y);
+
+    return newWorld;
   }
 
   public generate(): void {
@@ -65,6 +124,19 @@ export class World {
     this.roadBorders = Polygon.union(this.envelopes.map((envelope: Envelope) => envelope.polygon));
     this.buildings = this.generateBuildings();
     this.trees = this.generateTrees();
+
+    this.laneGuides = [];
+    this.laneGuides.push(...this.generateLaneGuides());
+  }
+
+  private generateLaneGuides(): Segment[] {
+    const tempEnvelopes: Envelope[] = [];
+
+    for (const segment of this.graph.segments) {
+      tempEnvelopes.push(new Envelope(segment, this.roadWidth / 2, this.roadRoundness));
+    }
+
+    return Polygon.union(tempEnvelopes.map((envelope: Envelope) => envelope.polygon));
   }
 
   private generateTrees(): Tree[] {
@@ -209,8 +281,90 @@ export class World {
     return bases.map((base) => new Building(base));
   }
 
+  private getIntersections(): Point[] {
+    const subset: Point[] = [];
+
+    for (const point of this.graph.points) {
+      let degree: number = 0;
+
+      for (const segment of this.graph.segments) {
+        if (segment.includes(point)) {
+          degree++;
+        }
+      }
+
+      if (degree > 2) {
+        subset.push(point);
+      }
+    }
+
+    return subset;
+  }
+
+  private updateLights(): void {
+    const lights: IWorld.TMarking[] = this.markings.filter(
+      (marking: IWorld.TMarking) => marking instanceof Light,
+    );
+
+    const controlCenters: any[] = [];
+
+    for (const light of lights) {
+      let point: Point | null = Utils.getNearestPoint({
+        point: light.center,
+        points: this.getIntersections(),
+      });
+
+      if (!point) {
+        point = Utils.getNearestPoint({
+          point: light.center,
+          points: this.graph.points,
+        });
+      }
+
+      let controlCenter: any | undefined = controlCenters.find((controlCenter) =>
+        controlCenter.equals(point!),
+      );
+
+      if (!controlCenter) {
+        controlCenter = new Point(point!.x, point!.y);
+        controlCenter.lights = [light];
+        controlCenters.push(controlCenter);
+      } else {
+        controlCenter.lights.push(light);
+      }
+    }
+
+    const greenDuration: number = 2;
+    const yellowDuration: number = 1;
+
+    for (const controlCenter of controlCenters) {
+      controlCenter.ticks = controlCenter.lights.length * (greenDuration + yellowDuration);
+    }
+
+    const tick = Math.floor(this.frameCount / 60);
+
+    for (const controlCenter of controlCenters) {
+      const cTick = tick % controlCenter.ticks;
+      const greenYellowIndex = Math.floor(cTick / (greenDuration + yellowDuration));
+      const greenYellowState =
+        cTick % (greenDuration + yellowDuration) < greenDuration ? 'green' : 'yellow';
+
+      for (let i = 0; i < controlCenter.lights.length; i++) {
+        if (i === greenYellowIndex) {
+          controlCenter.lights[i].state = greenYellowState;
+        } else {
+          controlCenter.lights[i].state = 'red';
+        }
+      }
+    }
+
+    this.frameCount++;
+  }
+
   public draw(params: IWorld.IDrawParams): void {
     const { context, viewPoint } = params;
+
+    this.updateLights();
 
     for (const envelope of this.envelopes) {
       envelope.draw({
@@ -218,6 +372,10 @@ export class World {
         fill: '#bbb',
         stroke: '#bbb',
       });
+    }
+
+    for (const marking of this.markings) {
+      marking.draw({ context });
     }
 
     for (const segment of this.graph.segments) {
