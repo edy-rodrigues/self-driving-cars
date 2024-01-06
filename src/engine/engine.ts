@@ -1,6 +1,4 @@
 import { Graph } from '../math/graph.ts';
-import { Point } from '../primitives/point.ts';
-import { Segment } from '../primitives/segment.ts';
 import { GraphEditor } from './graph-editor.ts';
 import { Viewport } from './viewport.ts';
 
