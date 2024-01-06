@@ -1,5 +1,12 @@
-import type { Point } from '../primitives/point.ts';
-import type { Segment } from '../primitives/segment.ts';
+import { Point } from '../primitives/point.ts';
+import { Segment } from '../primitives/segment.ts';
+
+export declare namespace IGraph {
+  interface IGetNearestPointParams {
+    point: Point;
+    threshold?: number;
+  }
+}
 
 export class Graph {
   public points: Point[] = [];
@@ -10,13 +17,30 @@ export class Graph {
     this.segments = segments;
   }
 
+  public static load(graph: Graph): Graph {
+    const points = graph.points.map((point: Point) => new Point(point.x, point.y));
+    const segments = graph.segments.map(
+      (segment: Segment) =>
+        new Segment(
+          points.find((point: Point) => point.equals(segment.p1))!,
+          points.find((point: Point) => point.equals(segment.p2))!,
+        ),
+    );
+
+    return new Graph(points, segments);
+  }
+
   public draw(context: CanvasRenderingContext2D) {
     for (const segment of this.segments) {
-      segment.draw(context);
+      segment.draw({
+        context,
+      });
     }
 
     for (const point of this.points) {
-      point.draw(context);
+      point.draw({
+        context,
+      });
     }
   }
 
@@ -85,5 +109,27 @@ export class Graph {
   public dispose() {
     this.points = [];
     this.segments = [];
+  }
+
+  public getNearestPoint(params: IGraph.IGetNearestPointParams): Point | null {
+    const { point, threshold = Number.MAX_SAFE_INTEGER } = params;
+
+    let minimumDistance = Number.MAX_SAFE_INTEGER;
+    let nearest: Point | null = null;
+
+    for (const pointIterator of this.points) {
+      const distance = this.getDistance(pointIterator, point);
+
+      if (distance < minimumDistance && distance < threshold) {
+        minimumDistance = distance;
+        nearest = pointIterator;
+      }
+    }
+
+    return nearest;
+  }
+
+  public getDistance(pointOne: Point, pointTwo: Point): number {
+    return Math.hypot(pointOne.x - pointTwo.x, pointOne.y - pointTwo.y);
   }
 }
