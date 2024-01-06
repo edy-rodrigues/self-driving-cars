@@ -1,4 +1,5 @@
 import { Point } from '../primitives/point.ts';
+import { Utils } from './utils.ts';
 
 export declare namespace IViewport {
   interface IDragProps {
@@ -36,7 +37,7 @@ export class Viewport {
   }
 
   public getOffset(): Point {
-    return this.add(this.offset, this.drag.offset);
+    return Utils.add(this.offset, this.drag.offset);
   }
 
   public getMouse(event: MouseEvent, subtractDragOffset: boolean = false): Point {
@@ -45,7 +46,7 @@ export class Viewport {
       (event.offsetY - this.center.y) * this.zoom - this.offset.y,
     );
 
-    return subtractDragOffset ? this.subtract(point, this.drag.offset) : point;
+    return subtractDragOffset ? Utils.subtract(point, this.drag.offset) : point;
   }
 
   public reset() {
@@ -83,7 +84,7 @@ export class Viewport {
 
   private handleMouseUp(): void {
     if (this.drag.active) {
-      this.offset = this.add(this.offset, this.drag.offset);
+      this.offset = Utils.add(this.offset, this.drag.offset);
 
       this.drag = {
         start: new Point(0, 0),
@@ -97,16 +98,8 @@ export class Viewport {
   private handleMouseMove(event: MouseEvent): void {
     if (this.drag.active) {
       this.drag.end = this.getMouse(event);
-      this.drag.offset = this.subtract(this.drag.end, this.drag.start);
+      this.drag.offset = Utils.subtract(this.drag.end, this.drag.start);
     }
-  }
-
-  private add(pointOne: Point, pointTwo: Point): Point {
-    return new Point(pointOne.x + pointTwo.x, pointOne.y + pointTwo.y);
-  }
-
-  private subtract(pointOne: Point, pointTwo: Point): Point {
-    return new Point(pointOne.x - pointTwo.x, pointOne.y - pointTwo.y);
   }
 
   private scale(point: Point, scaler: number): Point {

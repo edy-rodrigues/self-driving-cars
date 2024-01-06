@@ -1,6 +1,7 @@
 import { Graph } from '../math/graph.ts';
 import { GraphEditor } from './graph-editor.ts';
 import { Viewport } from './viewport.ts';
+import { World } from './world.ts';
 
 export class Engine {
   public static canvas: HTMLCanvasElement;
@@ -8,6 +9,7 @@ export class Engine {
   public static graph: Graph;
   public static graphEditor: GraphEditor;
   public static viewport: Viewport;
+  public static world: World;
 
   public static start() {
     const app = document.querySelector('#app')! as HTMLDivElement;
@@ -40,6 +42,9 @@ export class Engine {
     const graph = graphInfo ? Graph.load(graphInfo) : new Graph();
     Engine.graph = graph;
 
+    const world = new World(graph);
+    Engine.world = world;
+
     const viewport = new Viewport(canvas);
     Engine.viewport = viewport;
 
@@ -58,9 +63,12 @@ export class Engine {
   }
 
   public static animate() {
-    const { graphEditor, viewport } = Engine;
+    const { graphEditor, viewport, context, world } = Engine;
 
     viewport.reset();
+    world.generate();
+    world.draw(context);
+    context.globalAlpha = 0.3;
     graphEditor.display();
     requestAnimationFrame(Engine.animate);
   }
