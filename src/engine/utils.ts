@@ -46,7 +46,7 @@ export class Utils {
     const uTop: number = (C.y - A.y) * (A.x - B.x) - (C.x - A.x) * (A.y - B.y);
     const bottom: number = (D.y - C.y) * (B.x - A.x) - (D.x - C.x) * (B.y - A.y);
 
-    const eps = 0.001;
+    const eps: number = 0.001;
 
     if (Math.abs(bottom) > eps) {
       const t: number = tTop / bottom;
@@ -68,8 +68,20 @@ export class Utils {
     return a + (b - a) * t;
   }
 
-  public static getRandomColor() {
-    const hue = 290 + Math.random() * 260;
+  public static lerp2D(A: Point, B: Point, t: number): Point {
+    return new Point(Utils.lerp(A.x, B.x, t), Utils.lerp(A.y, B.y, t));
+  }
+
+  public static getFake3DPoint(point: Point, viewPoint: Point, height: number): Point {
+    const direction: Point = Utils.normalize(Utils.subtract(point, viewPoint));
+    const distance: number = Utils.getDistance(point, viewPoint);
+    const scaler: number = Math.atan(distance / 300) / (Math.PI / 2);
+
+    return Utils.add(point, Utils.scale(direction, height * scaler));
+  }
+
+  public static getRandomColor(): string {
+    const hue: number = 290 + Math.random() * 260;
     return `hsl(${hue}, 100%, 60%)`;
   }
 }

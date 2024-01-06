@@ -1,5 +1,7 @@
 import { Graph } from '../math/graph.ts';
+import type { Point } from '../primitives/point.ts';
 import { GraphEditor } from './graph-editor.ts';
+import { Utils } from './utils.ts';
 import { Viewport } from './viewport.ts';
 import { World } from './world.ts';
 
@@ -73,7 +75,10 @@ export class Engine {
       world.generate();
       Engine.oldGraphHash = graph.hash();
     }
-    world.draw(context);
+
+    const viewPoint: Point = Utils.scale(viewport.getOffset(), -1);
+    world.draw({ context, viewPoint });
+
     context.globalAlpha = 0.3;
     graphEditor.display();
     requestAnimationFrame(Engine.animate);

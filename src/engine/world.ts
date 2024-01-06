@@ -1,9 +1,18 @@
+import { Building } from '../items/building.ts';
+import { Tree } from '../items/tree.ts';
 import type { Graph } from '../math/graph.ts';
 import { Envelope } from '../primitives/envelope.ts';
 import { Point } from '../primitives/point.ts';
 import { Polygon } from '../primitives/polygon.ts';
 import { Segment } from '../primitives/segment.ts';
 import { Utils } from './utils.ts';
+
+export declare namespace IWorld {
+  interface IDrawParams {
+    context: CanvasRenderingContext2D;
+    viewPoint: Point;
+  }
+}
 
 export class World {
   private readonly graph: Graph;
@@ -15,8 +24,8 @@ export class World {
   private readonly buildingMinLength: number;
   private readonly spacing: number;
   private readonly treeSize: number;
-  private buildings: Polygon[] = [];
-  private trees: Point[] = [];
+  private buildings: Building[] = [];
+  private trees: Tree[] = [];
 
   public constructor(
     graph: Graph,
@@ -58,10 +67,10 @@ export class World {
     this.trees = this.generateTrees();
   }
 
-  private generateTrees(count: number = 10): Point[] {
+  private generateTrees(): Tree[] {
     const points: Point[] = [
       ...this.roadBorders.map((segment: Segment) => [segment.p1, segment.p2]).flat(),
-      ...this.buildings.map((polygon: Polygon) => polygon.points).flat(),
+      ...this.buildings.map((building: Building) => building.base.points).flat(),
     ];
 
     const left: number = Math.min(...points.map((point: Point) => point.x));
@@ -70,11 +79,11 @@ export class World {
     const bottom: number = Math.max(...points.map((point: Point) => point.y));
 
     const illegalPolygons: Polygon[] = [
-      ...this.buildings,
+      ...this.buildings.map((building: Building) => building.base),
       ...this.envelopes.map((envelope: Envelope) => envelope.polygon),
     ];
 
-    const trees: Point[] = [];
+    const trees: Tree[] = [];
     let tryCount: number = 0;
 
     while (tryCount < 100) {
@@ -85,6 +94,7 @@ export class World {
 
       let keep: boolean = true;
 
+      // check if tree inside or nearby building or road
       for (const illegalPolygon of illegalPolygons) {
         if (
           illegalPolygon.containsPoint(point) ||
@@ -95,19 +105,19 @@ export class World {
         }
       }
 
-      // check if tree inside or nearby building or road
+      // check if tree too close to other trees
       if (keep) {
         for (const tree of trees) {
-          if (Utils.getDistance(tree, point) < this.treeSize) {
+          if (Utils.getDistance(tree.center, point) < this.treeSize) {
             keep = false;
             break;
           }
         }
       }
 
-      // check if tree too close to other trees
+      // avoiding trees in the middle of nowhere
       if (keep) {
-        let closeToSomething = false;
+        let closeToSomething: boolean = false;
 
         for (const illegalPolygon of illegalPolygons) {
           if (illegalPolygon.distanceToPoint(point) < this.treeSize * 2) {
@@ -119,9 +129,8 @@ export class World {
         keep = closeToSomething;
       }
 
-      // avoiding trees in the middle of nowhere
       if (keep) {
-        trees.push(point);
+        trees.push(new Tree(point, this.treeSize));
         tryCount = 0;
       }
 
@@ -131,7 +140,7 @@ export class World {
     return trees;
   }
 
-  private generateBuildings(): Polygon[] {
+  private generateBuildings(): Building[] {
     const tempEnvelopes: Envelope[] = [];
 
     for (const segment of this.graph.segments) {
@@ -197,10 +206,12 @@ export class World {
       }
     }
 
-    return bases;
+    return bases.map((base) => new Building(base));
   }
 
-  public draw(context: CanvasRenderingContext2D): void {
+  public draw(params: IWorld.IDrawParams): void {
+    const { context, viewPoint } = params;
+
     for (const envelope of this.envelopes) {
       envelope.draw({
         context,
@@ -226,12 +237,12 @@ export class World {
       });
     }
 
-    for (const tree of this.trees) {
-      tree.draw({ context, size: this.treeSize, color: 'rgba(0, 0, 0, 0.5)' });
-    }
+    const items = [...this.buildings, ...this.trees];
 
-    for (const building of this.buildings) {
-      building.draw({ context });
+    items.sort((a, b) => b.base.distanceToPoint(viewPoint) - a.base.distanceToPoint(viewPoint));
+
+    for (const item of items) {
+      item.draw({ context, viewPoint });
     }
   }
 }

@@ -5,9 +5,11 @@ import { Segment } from './segment.ts';
 export declare namespace IPolygon {
   interface IDrawParams {
     context: CanvasRenderingContext2D;
-    stroke?: string;
+    viewPoint: Point;
+    stroke?: CanvasFillStrokeStyles['strokeStyle'];
     lineWidth?: number;
-    fill?: string;
+    fill?: CanvasFillStrokeStyles['fillStyle'];
+    join?: CanvasLineJoin;
   }
 }
 
@@ -130,12 +132,19 @@ export class Polygon {
   }
 
   public draw(params: IPolygon.IDrawParams): void {
-    const { context, stroke = 'blue', lineWidth = 2, fill = 'rgba(0, 0, 255, 0.3)' } = params;
+    const {
+      context,
+      stroke = 'blue',
+      lineWidth = 2,
+      fill = 'rgba(0, 0, 255, 0.3)',
+      join = 'miter',
+    } = params;
 
     context.beginPath();
     context.fillStyle = fill;
     context.strokeStyle = stroke;
     context.lineWidth = lineWidth;
+    context.lineJoin = join;
     context.moveTo(this.points[0].x, this.points[0].y);
 
     for (let i = 1; i < this.points.length; i++) {
