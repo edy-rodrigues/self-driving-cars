@@ -10,6 +10,7 @@ export class Engine {
   public static graphEditor: GraphEditor;
   public static viewport: Viewport;
   public static world: World;
+  public static oldGraphHash: string;
 
   public static start() {
     const app = document.querySelector('#app')! as HTMLDivElement;
@@ -51,6 +52,7 @@ export class Engine {
     const graphEditor = new GraphEditor(viewport, graph);
     Engine.graphEditor = graphEditor;
 
+    Engine.oldGraphHash = graph.hash();
     Engine.animate();
 
     disposeButton.addEventListener('click', (): void => {
@@ -63,10 +65,14 @@ export class Engine {
   }
 
   public static animate() {
-    const { graphEditor, viewport, context, world } = Engine;
+    const { graph, graphEditor, viewport, context, world } = Engine;
 
     viewport.reset();
-    world.generate();
+
+    if (graph.hash() !== Engine.oldGraphHash) {
+      world.generate();
+      Engine.oldGraphHash = graph.hash();
+    }
     world.draw(context);
     context.globalAlpha = 0.3;
     graphEditor.display();

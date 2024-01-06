@@ -103,6 +103,26 @@ export class Polygon {
     return intersectionCount % 2 === 1;
   }
 
+  public distanceToPoint(point: Point): number {
+    return Math.min(...this.segments.map((segment: Segment) => segment.distanceToPoint(point)));
+  }
+
+  public distanceToPolygon(polygon: Polygon): number {
+    return Math.min(...this.points.map((point: Point) => polygon.distanceToPoint(point)));
+  }
+
+  public intersectsPolygon(polygon: Polygon): boolean {
+    for (const segmentOne of this.segments) {
+      for (const segmentTwo of polygon.segments) {
+        if (Utils.getIntersection(segmentOne.p1, segmentOne.p2, segmentTwo.p1, segmentTwo.p2)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   public containsSegment(segment: Segment): boolean {
     const midpoint = Utils.average(segment.p1, segment.p2);
 

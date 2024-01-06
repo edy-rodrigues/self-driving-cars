@@ -1,3 +1,4 @@
+import { Utils } from '../engine/utils.ts';
 import { Point } from '../primitives/point.ts';
 import { Segment } from '../primitives/segment.ts';
 
@@ -28,6 +29,10 @@ export class Graph {
     );
 
     return new Graph(points, segments);
+  }
+
+  public hash(): string {
+    return JSON.stringify(this);
   }
 
   public draw(context: CanvasRenderingContext2D) {
@@ -118,7 +123,7 @@ export class Graph {
     let nearest: Point | null = null;
 
     for (const pointIterator of this.points) {
-      const distance = this.getDistance(pointIterator, point);
+      const distance = Utils.getDistance(pointIterator, point);
 
       if (distance < minimumDistance && distance < threshold) {
         minimumDistance = distance;
@@ -127,9 +132,5 @@ export class Graph {
     }
 
     return nearest;
-  }
-
-  public getDistance(pointOne: Point, pointTwo: Point): number {
-    return Math.hypot(pointOne.x - pointTwo.x, pointOne.y - pointTwo.y);
   }
 }

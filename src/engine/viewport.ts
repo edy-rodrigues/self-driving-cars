@@ -24,7 +24,7 @@ export class Viewport {
 
     this.zoom = 1;
     this.center = new Point(this.canvas.width / 2, this.canvas.height / 2);
-    this.offset = this.scale(this.center, -1);
+    this.offset = Utils.scale(this.center, -1);
 
     this.drag = {
       start: new Point(0, 0),
@@ -100,9 +100,5 @@ export class Viewport {
       this.drag.end = this.getMouse(event);
       this.drag.offset = Utils.subtract(this.drag.end, this.drag.start);
     }
-  }
-
-  private scale(point: Point, scaler: number): Point {
-    return new Point(point.x * scaler, point.y * scaler);
   }
 }

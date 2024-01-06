@@ -1,3 +1,4 @@
+import { Utils } from '../engine/utils.ts';
 import type { Point } from './point.ts';
 
 export declare namespace ISegment {
@@ -37,5 +38,38 @@ export class Segment {
 
   public includes(point: Point): boolean {
     return this.p1.equals(point) || this.p2.equals(point);
+  }
+
+  public length(): number {
+    return Utils.getDistance(this.p1, this.p2);
+  }
+
+  public directionVector(): Point {
+    return Utils.normalize(Utils.subtract(this.p2, this.p1));
+  }
+
+  public distanceToPoint(point: Point): number {
+    const project = this.projectPoint(point);
+
+    if (project.offset > 0 && project.offset < 1) {
+      return Utils.getDistance(point, project.point);
+    }
+
+    const distanceToP1 = Utils.getDistance(point, this.p1);
+    const distanceToP2 = Utils.getDistance(point, this.p2);
+
+    return Math.min(distanceToP1, distanceToP2);
+  }
+
+  public projectPoint(point: Point) {
+    const a = Utils.subtract(point, this.p1);
+    const b = Utils.subtract(this.p2, this.p1);
+    const normalizeB = Utils.normalize(b);
+    const scaler = Utils.dot(a, normalizeB);
+
+    return {
+      point: Utils.add(this.p1, Utils.scale(normalizeB, scaler)),
+      offset: scaler / Utils.magnitude(b),
+    };
   }
 }
