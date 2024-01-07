@@ -1,3 +1,4 @@
+import { NeuralNetwork } from '../ai/network.ts';
 import { CrossingEditor } from '../editors/crossing-editor.ts';
 import { GraphEditor } from '../editors/graph-editor.ts';
 import { LightEditor } from '../editors/light-editor.ts';
@@ -14,6 +15,11 @@ import { Utils } from './utils.ts';
 import { Viewport } from './viewport.ts';
 import { Visualizer } from './visualizer.ts';
 import { World } from './world.ts';
+
+const IAMaxSpeed = 8;
+const brainDiff = 0.1;
+const control = 'keyboard';
+const carsCount = 1;
 
 export declare namespace IEngine {
   interface ITool {
@@ -51,7 +57,8 @@ export class Engine {
   public static viewport: Viewport;
   public static world: World;
   public static oldGraphHash: string;
-  public static car: Car;
+  public static cars: Car[];
+  public static bestCar: Car;
   public static road: Road;
   public static traffic: Car[];
 
@@ -70,13 +77,47 @@ export class Engine {
     Engine.visualizer = visualizer;
     Engine.visualizerContext = visualizer.getContext('2d')!;
 
-    Engine.road = new Road(canvas.width / 2, canvas.width * 0.9);
-    Engine.car = new Car(Engine.road.getLaneCenter(1), 300, 30, 50, 'ai', 2.5);
+    Engine.road = new Road(canvas.width / 2, canvas.width * 0.6);
+    Engine.cars = Engine.generateCars(carsCount);
+    Engine.bestCar = Engine.cars[0];
+
+    if (localStorage.getItem('bestBrain')) {
+      for (let i = 0; i < Engine.cars.length; i++) {
+        Engine.cars[i].brain = Engine.loadBestBrain()!;
+
+        if (i !== 0) {
+          NeuralNetwork.mutate(Engine.cars[i].brain!, brainDiff);
+        }
+      }
+    }
+
     Engine.traffic = [
-      new Car(Engine.road.getLaneCenter(0), -100, 30, 50, 'dummy', 1),
-      new Car(Engine.road.getLaneCenter(1), -150, 30, 50, 'dummy', 3),
-      new Car(Engine.road.getLaneCenter(2), -200, 30, 50, 'dummy', 2),
-      new Car(Engine.road.getLaneCenter(1), -50, 30, 50, 'dummy', 1),
+      new Car(Engine.road.getLaneCenter(1), -100, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(2), -250, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(0), -250, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(1), -400, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(2), -550, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(0), -550, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(1), -750, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(2), -750, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(0), -1000, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(1), -1000, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(2), -1150, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(0), -1300, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(1), -1300, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(2), -1450, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(1), -1600, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(2), -1600, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(0), -1750, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(0), -1900, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(1), -1900, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(2), -2050, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(0), -2200, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(1), -2200, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(2), -2350, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(1), -2500, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(2), -2500, 30, 50, 'dummy', 2, Utils.getRandomColor()),
+      new Car(Engine.road.getLaneCenter(0), -2750, 30, 50, 'dummy', 2, Utils.getRandomColor()),
     ];
 
     const controllers = document.createElement('div');
@@ -99,6 +140,8 @@ export class Engine {
     const buttons = [
       Utils.createButton('🗑️'),
       Utils.createButton('💾'),
+      Utils.createButton('🗑️'),
+      Utils.createButton('💾'),
       Utils.createButton('🌎'),
       Utils.createButton('🛑'),
       Utils.createButton('🚶'),
@@ -110,6 +153,8 @@ export class Engine {
     ];
 
     const [
+      disposeBrainButton,
+      saveBrainButton,
       disposeButton,
       saveButton,
       graphModeButton,
@@ -249,6 +294,10 @@ export class Engine {
       localStorage.setItem('world', JSON.stringify(world));
     });
 
+    disposeBrainButton.addEventListener('click', Engine.discardBestBrain);
+
+    saveBrainButton.addEventListener('click', Engine.saveBestBrain);
+
     for (const [mode, tool] of Object.entries(tools) as [keyof IEngine.ITools, IEngine.ITool][]) {
       tool.button.addEventListener('click', (): void => {
         setEditorMode(mode);
@@ -257,7 +306,7 @@ export class Engine {
   }
 
   public static animate(time: number): void {
-    const { graph, tools, viewport, context, world, visualizerContext, car, road, traffic } =
+    const { graph, tools, viewport, context, world, visualizerContext, cars, road, traffic } =
       Engine;
 
     viewport.reset();
@@ -280,15 +329,27 @@ export class Engine {
       traffic[i].update(road.borders, []);
     }
 
-    car.update(road.borders, traffic);
+    for (let i = 0; i < cars.length; i++) {
+      cars[i].update(road.borders, traffic);
+    }
+
+    const bestCar = cars.find((car) => car.y === Math.min(...cars.map((car) => car.y)))!;
+    Engine.bestCar = bestCar;
+
     context.save();
-    context.translate(0, -car.y);
+    context.translate(0, -bestCar.y);
 
     road.draw({ context });
     for (let i = 0; i < traffic.length; i++) {
       traffic[i].draw({ context, color: 'red' });
     }
-    car.draw({ context, color: 'blue' });
+
+    context.globalAlpha = 0.2;
+    for (let i = 0; i < cars.length; i++) {
+      cars[i].draw({ context, color: 'blue' });
+    }
+    context.globalAlpha = 1;
+    bestCar.draw({ context, color: 'green', sensor: true });
 
     context.restore();
 
@@ -300,9 +361,36 @@ export class Engine {
     );
     visualizerContext.save();
     visualizerContext.lineDashOffset = -time / 50;
-    Visualizer.drawNetwork(visualizerContext, car.brain);
+    Visualizer.drawNetwork(visualizerContext, bestCar.brain!);
     visualizerContext.restore();
 
     requestAnimationFrame(Engine.animate);
+  }
+
+  private static generateCars(N: number): Car[] {
+    const cars: Car[] = [];
+
+    for (let i = 0; i < N; i++) {
+      cars.push(new Car(Engine.road.getLaneCenter(1), 200, 30, 50, control, IAMaxSpeed));
+    }
+
+    return cars;
+  }
+
+  private static saveBestBrain(): void {
+    localStorage.setItem('bestBrain', JSON.stringify(Engine.bestCar.brain));
+    console.log('Save best brain!');
+  }
+
+  private static discardBestBrain(): void {
+    localStorage.removeItem('bestBrain');
+    console.log('Remove best brain!');
+  }
+
+  private static loadBestBrain(): NeuralNetwork | null {
+    const bestBrainJSON = localStorage.getItem('bestBrain')!;
+
+    console.log('Load best brain!');
+    return JSON.parse(bestBrainJSON) as NeuralNetwork;
   }
 }

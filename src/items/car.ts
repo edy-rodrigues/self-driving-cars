@@ -1,4 +1,5 @@
 import { NeuralNetwork } from '../ai/network.ts';
+import cardPNG from '../assets/images/car.png';
 import type { IControl } from '../controls/control.ts';
 import { Control } from '../controls/control.ts';
 import { Sensor } from '../engine/sensor.ts';
@@ -14,10 +15,12 @@ export declare namespace ICar {
   interface IDrawParams {
     context: CanvasRenderingContext2D;
     color: string;
+    sensor?: boolean;
   }
 }
 
 export class Car {
+  private readonly mask: HTMLCanvasElement;
   public x: number;
   public y: number;
   private speed: number;
@@ -29,11 +32,12 @@ export class Car {
   private readonly height: number;
   private damaged: boolean;
   public polygon: ICar.IPolygonProps[];
+  private readonly image: HTMLImageElement;
 
   private readonly controlType: IControl.TType;
   private readonly control: Control;
   private readonly sensor?: Sensor;
-  public readonly brain: NeuralNetwork;
+  public brain?: NeuralNetwork;
   private readonly useBrain: boolean;
 
   public constructor(
@@ -42,7 +46,8 @@ export class Car {
     width: number,
     height: number,
     controlType: IControl.TType,
-    maxSpeed: number = 7,
+    maxSpeed: number = 3,
+    color: string = 'blue',
   ) {
     this.x = x;
     this.y = y;
@@ -66,6 +71,23 @@ export class Car {
     }
 
     this.control = new Control(this.controlType);
+
+    this.image = new Image();
+    this.image.src = cardPNG;
+
+    this.mask = document.createElement('canvas');
+    this.mask.width = this.width;
+    this.mask.height = this.height;
+
+    const maskContext = this.mask.getContext('2d')!;
+    this.image.onload = (): void => {
+      maskContext.fillStyle = color;
+      maskContext.rect(0, 0, this.width, this.height);
+      maskContext.fill();
+
+      maskContext.globalCompositeOperation = 'destination-atop';
+      maskContext.drawImage(this.image, 0, 0, this.width, this.height);
+    };
   }
 
   public update(roadBorders: Road['borders'], traffic: Car[]): void {
@@ -82,7 +104,7 @@ export class Car {
         reading === null ? 0 : 1 - reading.offset,
       );
 
-      const outputs = NeuralNetwork.feedForward(offsets, this.brain);
+      const outputs = NeuralNetwork.feedForward(offsets, this.brain!);
 
       if (this.useBrain) {
         this.control.forward = !!outputs[0];
@@ -183,25 +205,22 @@ export class Car {
   }
 
   public draw(params: ICar.IDrawParams): void {
-    const { context, color } = params;
+    const { context, sensor = false } = params;
 
-    if (this.damaged) {
-      context.fillStyle = 'red';
-    } else {
-      context.fillStyle = color;
-    }
-
-    context.beginPath();
-    context.moveTo(this.polygon[0].x, this.polygon[0].y);
-
-    for (let i = 0; i < this.polygon.length; i++) {
-      context.lineTo(this.polygon[i].x, this.polygon[i].y);
-    }
-
-    context.fill();
-
-    if (this.sensor) {
+    if (this.sensor && sensor) {
       this.sensor.draw({ context });
     }
+
+    context.save();
+    context.translate(this.x, this.y);
+    context.rotate(-this.angle);
+
+    if (!this.damaged) {
+      context.drawImage(this.mask, -this.width / 2, -this.height / 2, this.width, this.height);
+      context.globalCompositeOperation = 'multiply';
+    }
+
+    context.drawImage(this.image, -this.width / 2, -this.height / 2, this.width, this.height);
+    context.restore();
   }
 }
