@@ -1,11 +1,12 @@
 import { Building } from '../items/building.ts';
+import type { Car } from '../items/car.ts';
 import { Tree } from '../items/tree.ts';
 import { MarkingLoader } from '../loaders/marking-loader.ts';
 import type { Crossing } from '../markings/crossing.ts';
 import { Light } from '../markings/light.ts';
 import type { Marking } from '../markings/marking.ts';
 import type { Parking } from '../markings/parking.ts';
-import type { Start } from '../markings/start.ts';
+import { Start } from '../markings/start.ts';
 import type { Stop } from '../markings/stop.ts';
 import type { Target } from '../markings/target.ts';
 import type { Yield } from '../markings/yield.ts';
@@ -31,6 +32,7 @@ export declare namespace IWorld {
   interface IDrawParams {
     context: CanvasRenderingContext2D;
     viewPoint: Point;
+    showStartMarkings?: boolean;
   }
 }
 
@@ -39,18 +41,22 @@ export class World {
   public offset: Point;
   public graph: Graph;
 
+  public buildings: Building[] = [];
   private envelopes: Envelope[];
-  private roadBorders: Segment[];
-  public roadWidth: number;
-  private roadRoundness: number;
-  private buildingWidth: number;
-  private buildingMinLength: number;
-  private spacing: number;
-  private treeSize: number;
-  private buildings: Building[] = [];
+  public roadBorders: Segment[];
   private trees: Tree[] = [];
+  public bestCar: Car | null;
+  public cars: Car[];
   public laneGuides: Segment[];
   public markings: IWorld.TMarking[] = [];
+
+  public roadWidth: number;
+  public roadRoundness: number;
+  public buildingWidth: number;
+  public buildingMinLength: number;
+  public spacing: number;
+  public treeSize: number;
+
   public frameCount: number;
 
   public constructor(
@@ -73,13 +79,14 @@ export class World {
     this.spacing = spacing;
     this.treeSize = treeSize;
 
+    this.bestCar = null;
     this.buildings = [];
+    this.cars = [];
     this.envelopes = [];
+    this.laneGuides = [];
+    this.markings = [];
     this.roadBorders = [];
     this.trees = [];
-    this.laneGuides = [];
-
-    this.markings = [];
 
     this.frameCount = 0;
 
@@ -362,7 +369,7 @@ export class World {
   }
 
   public draw(params: IWorld.IDrawParams): void {
-    const { context, viewPoint } = params;
+    const { context, viewPoint, showStartMarkings = true } = params;
 
     this.updateLights();
 
@@ -375,7 +382,9 @@ export class World {
     }
 
     for (const marking of this.markings) {
-      marking.draw({ context });
+      if (!(marking instanceof Start) || showStartMarkings) {
+        marking.draw({ context });
+      }
     }
 
     for (const segment of this.graph.segments) {
@@ -395,8 +404,16 @@ export class World {
       });
     }
 
-    const items = [...this.buildings, ...this.trees];
+    context.globalAlpha = 0.2;
+    for (const car of this.cars) {
+      car.draw({ context });
+    }
+    context.globalAlpha = 1;
+    if (this.bestCar) {
+      this.bestCar.draw({ context, sensor: true });
+    }
 
+    const items = [...this.buildings, ...this.trees];
     items.sort((a, b) => b.base.distanceToPoint(viewPoint) - a.base.distanceToPoint(viewPoint));
 
     for (const item of items) {

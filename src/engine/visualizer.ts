@@ -69,7 +69,6 @@ export class Visualizer {
 
     for (let i: number = 0; i < inputs.length; i++) {
       const x: number = Visualizer.getNodeX(inputs, i, left, right);
-
       context.beginPath();
       context.arc(x, bottom, nodeRadius, 0, Math.PI * 2);
       context.fillStyle = 'black';
@@ -101,21 +100,6 @@ export class Visualizer {
       context.setLineDash([3, 3]);
       context.stroke();
       context.setLineDash([]);
-
-      if (i === outputs.length - 1) {
-        context.beginPath();
-        context.arc(x + 30, top, nodeRadius, 0, Math.PI * 2);
-        context.fillStyle = 'black';
-        context.fill();
-
-        context.beginPath();
-        context.lineWidth = 2;
-        context.arc(x + 30, top, nodeRadius * 0.8, 0, Math.PI * 2);
-        context.strokeStyle = Utils.getRGBA(biases[i]);
-        context.setLineDash([3, 3]);
-        context.stroke();
-        context.setLineDash([]);
-      }
 
       if (labels[i]) {
         context.beginPath();

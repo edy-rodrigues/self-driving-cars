@@ -25,6 +25,59 @@ body {
   width: 100%;
 }
 
+#app #overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+#app .modal {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  transform: translate(0, -50%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 450px;
+  padding: 24px;
+}
+
+#app .modal .modal-title {
+  font-family: Arial, sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  margin-bottom: 24px;
+}
+
+#app .modal textarea {
+  margin-bottom: 24px;
+}
+
+#app .modal .modal-actions-container {
+  display: flex;
+  gap: 24px;
+}
+
+#app .modal .modal-actions-container button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  font-size: 20px;
+  border: none;
+  background-color: #d1d1d1;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
 #app .controllers {
   display: flex;
   justify-content: center;
@@ -37,11 +90,21 @@ body {
 }
 
 #app canvas#world {
-  background-color: lightgray;
+  background-color: #2a5;
 }
 
 #app canvas#visualizer {
   background-color: #0a0a0a;
+}
+
+#app .controllers {
+  padding: 0 24px;
+}
+
+#app .controllers .ai-buttons-container {
+  display: flex;
+  gap: 8px;
+  margin-right: auto;
 }
 
 #app .controllers button, #app .controllers .file-input-label {

@@ -25,7 +25,6 @@ export class Control {
   }
 
   private addEventListeners(): void {
-    console.log('addEventListeners');
     document.addEventListener('keydown', (event: KeyboardEvent): void => {
       switch (event.key) {
         case 'ArrowLeft':

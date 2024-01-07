@@ -14,7 +14,6 @@ export declare namespace ICar {
 
   interface IDrawParams {
     context: CanvasRenderingContext2D;
-    color: string;
     sensor?: boolean;
   }
 }
@@ -31,6 +30,8 @@ export class Car {
   private readonly width: number;
   private readonly height: number;
   private damaged: boolean;
+  public fitness: number;
+
   public polygon: ICar.IPolygonProps[];
   private readonly image: HTMLImageElement;
 
@@ -46,6 +47,7 @@ export class Car {
     width: number,
     height: number,
     controlType: IControl.TType,
+    angle: number = 0,
     maxSpeed: number = 3,
     color: string = 'blue',
   ) {
@@ -58,8 +60,10 @@ export class Car {
     this.acceleration = 0.2;
     this.maxSpeed = maxSpeed;
     this.friction = 0.05;
-    this.angle = 0;
+    this.angle = angle;
     this.damaged = false;
+    this.fitness = 0;
+
     this.polygon = this.createPolygon();
     this.controlType = controlType;
 
@@ -93,6 +97,7 @@ export class Car {
   public update(roadBorders: Road['borders'], traffic: Car[]): void {
     if (!this.damaged) {
       this.move();
+      this.fitness += this.speed;
       this.polygon = this.createPolygon();
       this.damaged = this.assessDamage(roadBorders, traffic);
     }
