@@ -1,16 +1,27 @@
-export class KeyboardControl {
+export declare namespace IControl {
+  type TType = 'keyboard' | 'ai' | 'dummy';
+}
+
+export class Control {
   public forward: boolean;
   public right: boolean;
   public left: boolean;
   public reverse: boolean;
 
-  public constructor() {
+  public constructor(type: IControl.TType) {
     this.forward = false;
     this.right = false;
     this.left = false;
     this.reverse = false;
 
-    this.addEventListeners();
+    switch (type) {
+      case 'keyboard':
+        this.addEventListeners();
+        break;
+      case 'dummy':
+        this.forward = true;
+        break;
+    }
   }
 
   private addEventListeners(): void {

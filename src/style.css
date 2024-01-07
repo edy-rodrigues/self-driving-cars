@@ -17,16 +17,31 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  margin: 0;
+  padding: 0;
 }
 
-canvas {
-  background-color: #bbb;
+#app {
+  width: 100%;
 }
 
 #app .controllers {
   display: flex;
   justify-content: center;
   gap: 8px;
+  margin-top: 24px;
+}
+
+#app #container {
+  display: flex;
+}
+
+#app canvas#world {
+  background-color: lightgray;
+}
+
+#app canvas#visualizer {
+  background-color: #0a0a0a;
 }
 
 #app .controllers button, #app .controllers .file-input-label {

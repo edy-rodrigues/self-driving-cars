@@ -12,6 +12,7 @@ import { Graph } from '../math/graph.ts';
 import type { Point } from '../primitives/point.ts';
 import { Utils } from './utils.ts';
 import { Viewport } from './viewport.ts';
+import { Visualizer } from './visualizer.ts';
 import { World } from './world.ts';
 
 export declare namespace IEngine {
@@ -43,6 +44,8 @@ export declare namespace IEngine {
 export class Engine {
   public static canvas: HTMLCanvasElement;
   public static context: CanvasRenderingContext2D;
+  public static visualizer: HTMLCanvasElement;
+  public static visualizerContext: CanvasRenderingContext2D;
   public static graph: Graph;
   public static tools: IEngine.ITools;
   public static viewport: Viewport;
@@ -50,15 +53,31 @@ export class Engine {
   public static oldGraphHash: string;
   public static car: Car;
   public static road: Road;
+  public static traffic: Car[];
 
   public static start(): void {
-    const app = document.querySelector('#app')! as HTMLDivElement;
+    const app: HTMLDivElement = document.querySelector('#app')! as HTMLDivElement;
 
-    const canvas = document.createElement('canvas');
+    const container = document.createElement('div');
+    container.setAttribute('id', 'container');
+
+    const canvas: HTMLCanvasElement = document.createElement('canvas');
+    canvas.setAttribute('id', 'world');
     Engine.canvas = canvas;
 
+    const visualizer: HTMLCanvasElement = document.createElement('canvas');
+    visualizer.setAttribute('id', 'visualizer');
+    Engine.visualizer = visualizer;
+    Engine.visualizerContext = visualizer.getContext('2d')!;
+
     Engine.road = new Road(canvas.width / 2, canvas.width * 0.9);
-    Engine.car = new Car(Engine.road.getLaneCenter(1), 100, 30, 50);
+    Engine.car = new Car(Engine.road.getLaneCenter(1), 300, 30, 50, 'ai', 2.5);
+    Engine.traffic = [
+      new Car(Engine.road.getLaneCenter(0), -100, 30, 50, 'dummy', 1),
+      new Car(Engine.road.getLaneCenter(1), -150, 30, 50, 'dummy', 3),
+      new Car(Engine.road.getLaneCenter(2), -200, 30, 50, 'dummy', 2),
+      new Car(Engine.road.getLaneCenter(1), -50, 30, 50, 'dummy', 1),
+    ];
 
     const controllers = document.createElement('div');
     controllers.classList.add('controllers');
@@ -107,11 +126,15 @@ export class Engine {
       controllers.appendChild(button);
     }
 
-    app.appendChild(canvas);
+    container.appendChild(canvas);
+    container.appendChild(visualizer);
+    app.appendChild(container);
     app.appendChild(controllers);
 
-    canvas.width = 800;
+    canvas.width = window.innerWidth / 2 + 100;
     canvas.height = 800;
+    visualizer.width = 400;
+    visualizer.height = 800;
 
     Engine.context = canvas.getContext('2d')!;
 
@@ -166,7 +189,7 @@ export class Engine {
 
     setEditorMode('graph');
 
-    Engine.animate();
+    Engine.animate(0);
 
     function setEditorMode(mode: keyof IEngine.ITools): void {
       disableEditors();
@@ -233,8 +256,9 @@ export class Engine {
     }
   }
 
-  public static animate(): void {
-    const { graph, tools, viewport, context, world, car, road } = Engine;
+  public static animate(time: number): void {
+    const { graph, tools, viewport, context, world, visualizerContext, car, road, traffic } =
+      Engine;
 
     viewport.reset();
 
@@ -252,14 +276,32 @@ export class Engine {
       tool.editor.display();
     }
 
-    car.update();
+    for (let i = 0; i < traffic.length; i++) {
+      traffic[i].update(road.borders, []);
+    }
+
+    car.update(road.borders, traffic);
     context.save();
     context.translate(0, -car.y);
 
     road.draw({ context });
-    car.draw({ context });
+    for (let i = 0; i < traffic.length; i++) {
+      traffic[i].draw({ context, color: 'red' });
+    }
+    car.draw({ context, color: 'blue' });
 
     context.restore();
+
+    visualizerContext.clearRect(
+      0,
+      0,
+      visualizerContext.canvas.width,
+      visualizerContext.canvas.height,
+    );
+    visualizerContext.save();
+    visualizerContext.lineDashOffset = -time / 50;
+    Visualizer.drawNetwork(visualizerContext, car.brain);
+    visualizerContext.restore();
 
     requestAnimationFrame(Engine.animate);
   }

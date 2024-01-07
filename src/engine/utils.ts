@@ -1,3 +1,4 @@
+import type { ICar } from '../items/car.ts';
 import { Point } from '../primitives/point.ts';
 import type { Segment } from '../primitives/segment.ts';
 
@@ -12,6 +13,17 @@ export declare namespace IUtils {
     point: Point;
     segments: Segment[];
     threshold?: number;
+  }
+
+  interface IGetIntersectionPureCoordinateProps {
+    x: number;
+    y: number;
+  }
+
+  interface IGetIntersectionPureReturn {
+    x: number;
+    y: number;
+    offset: number;
   }
 }
 
@@ -119,6 +131,53 @@ export class Utils {
     return null;
   }
 
+  public static getIntersectionPure(
+    A: IUtils.IGetIntersectionPureCoordinateProps,
+    B: IUtils.IGetIntersectionPureCoordinateProps,
+    C: IUtils.IGetIntersectionPureCoordinateProps,
+    D: IUtils.IGetIntersectionPureCoordinateProps,
+  ): IUtils.IGetIntersectionPureReturn | null {
+    const tTop = (D.x - C.x) * (A.y - C.y) - (D.y - C.y) * (A.x - C.x);
+    const uTop = (C.y - A.y) * (A.x - B.x) - (C.x - A.x) * (A.y - B.y);
+    const bottom = (D.y - C.y) * (B.x - A.x) - (D.x - C.x) * (B.y - A.y);
+
+    if (bottom != 0) {
+      const t = tTop / bottom;
+      const u = uTop / bottom;
+      if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+        return {
+          x: Utils.lerp(A.x, B.x, t),
+          y: Utils.lerp(A.y, B.y, t),
+          offset: t,
+        };
+      }
+    }
+
+    return null;
+  }
+
+  public static polysIntersect(
+    polyOne: ICar.IPolygonProps[],
+    polyTwo: ICar.IPolygonProps[],
+  ): boolean {
+    for (let i = 0; i < polyOne.length; i++) {
+      for (let j = 0; j < polyTwo.length; j++) {
+        const touch = Utils.getIntersectionPure(
+          polyOne[i],
+          polyOne[(i + 1) % polyOne.length],
+          polyTwo[j],
+          polyTwo[(j + 1) % polyTwo.length],
+        );
+
+        if (touch) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   public static lerp(a: number, b: number, t: number): number {
     return a + (b - a) * t;
   }
@@ -138,6 +197,14 @@ export class Utils {
   public static getRandomColor(): string {
     const hue: number = 290 + Math.random() * 260;
     return `hsl(${hue}, 100%, 60%)`;
+  }
+
+  public static getRGBA(value: number): string {
+    const alpha = Math.abs(value);
+    const R = value < 0 ? 0 : 255;
+    const G = R;
+    const B = value > 0 ? 0 : 255;
+    return `rgba(${R}, ${G}, ${B}, ${alpha})`;
   }
 
   public static createButton(icon: string) {

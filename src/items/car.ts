@@ -1,8 +1,19 @@
-import { KeyboardControl } from '../controls/keyboard.ts';
+import { NeuralNetwork } from '../ai/network.ts';
+import type { IControl } from '../controls/control.ts';
+import { Control } from '../controls/control.ts';
+import { Sensor } from '../engine/sensor.ts';
+import { Utils } from '../engine/utils.ts';
+import type { Road } from './road.ts';
 
 export declare namespace ICar {
+  interface IPolygonProps {
+    x: number;
+    y: number;
+  }
+
   interface IDrawParams {
     context: CanvasRenderingContext2D;
+    color: string;
   }
 }
 
@@ -13,13 +24,26 @@ export class Car {
   private readonly acceleration: number;
   private readonly maxSpeed: number;
   private readonly friction: number;
-  private angle: number;
+  public angle: number;
   private readonly width: number;
   private readonly height: number;
+  private damaged: boolean;
+  public polygon: ICar.IPolygonProps[];
 
-  private readonly control: KeyboardControl;
+  private readonly controlType: IControl.TType;
+  private readonly control: Control;
+  private readonly sensor?: Sensor;
+  public readonly brain: NeuralNetwork;
+  private readonly useBrain: boolean;
 
-  public constructor(x: number, y: number, width: number, height: number) {
+  public constructor(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    controlType: IControl.TType,
+    maxSpeed: number = 7,
+  ) {
     this.x = x;
     this.y = y;
     this.width = width;
@@ -27,15 +51,90 @@ export class Car {
 
     this.speed = 0;
     this.acceleration = 0.2;
-    this.maxSpeed = 7;
+    this.maxSpeed = maxSpeed;
     this.friction = 0.05;
     this.angle = 0;
+    this.damaged = false;
+    this.polygon = this.createPolygon();
+    this.controlType = controlType;
 
-    this.control = new KeyboardControl();
+    this.useBrain = this.controlType === 'ai';
+
+    if (this.controlType !== 'dummy') {
+      this.sensor = new Sensor(this);
+      this.brain = new NeuralNetwork([this.sensor.rayCount, 6, 4]);
+    }
+
+    this.control = new Control(this.controlType);
   }
 
-  public update() {
-    this.move();
+  public update(roadBorders: Road['borders'], traffic: Car[]): void {
+    if (!this.damaged) {
+      this.move();
+      this.polygon = this.createPolygon();
+      this.damaged = this.assessDamage(roadBorders, traffic);
+    }
+
+    if (this.sensor) {
+      this.sensor.update(roadBorders, traffic);
+
+      const offsets = this.sensor.readings.map((reading) =>
+        reading === null ? 0 : 1 - reading.offset,
+      );
+
+      const outputs = NeuralNetwork.feedForward(offsets, this.brain);
+
+      if (this.useBrain) {
+        this.control.forward = !!outputs[0];
+        this.control.right = !!outputs[1];
+        this.control.left = !!outputs[2];
+        this.control.reverse = !!outputs[3];
+      }
+    }
+  }
+
+  public assessDamage(roadBorders: Road['borders'], traffic: Car[]): boolean {
+    for (let i = 0; i < roadBorders.length; i++) {
+      if (Utils.polysIntersect(this.polygon, roadBorders[i])) {
+        return true;
+      }
+    }
+
+    for (let i = 0; i < traffic.length; i++) {
+      if (Utils.polysIntersect(this.polygon, traffic[i].polygon)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private createPolygon(): ICar.IPolygonProps[] {
+    const points: ICar.IPolygonProps[] = [];
+    const radius: number = Math.hypot(this.width, this.height) / 2;
+    const alpha: number = Math.atan2(this.width, this.height);
+
+    points.push({
+      x: this.x - Math.sin(this.angle - alpha) * radius,
+      y: this.y - Math.cos(this.angle - alpha) * radius,
+    });
+
+    points.push({
+      x: this.x - Math.sin(this.angle + alpha) * radius,
+      y: this.y - Math.cos(this.angle + alpha) * radius,
+    });
+
+    points.push({
+      x: this.x - Math.sin(Math.PI + this.angle - alpha) * radius,
+      y: this.y - Math.cos(Math.PI + this.angle - alpha) * radius,
+    });
+
+    points.push({
+      x: this.x - Math.sin(Math.PI + this.angle + alpha) * radius,
+      y: this.y - Math.cos(Math.PI + this.angle + alpha) * radius,
+    });
+
+    return points;
   }
 
   private move(): void {
@@ -84,15 +183,25 @@ export class Car {
   }
 
   public draw(params: ICar.IDrawParams): void {
-    const { context } = params;
+    const { context, color } = params;
 
-    context.save();
-    context.translate(this.x, this.y);
-    context.rotate(-this.angle);
+    if (this.damaged) {
+      context.fillStyle = 'red';
+    } else {
+      context.fillStyle = color;
+    }
+
     context.beginPath();
-    context.rect(-this.width / 2, -this.height / 2, this.width, this.height);
+    context.moveTo(this.polygon[0].x, this.polygon[0].y);
+
+    for (let i = 0; i < this.polygon.length; i++) {
+      context.lineTo(this.polygon[i].x, this.polygon[i].y);
+    }
+
     context.fill();
 
-    context.restore();
+    if (this.sensor) {
+      this.sensor.draw({ context });
+    }
   }
 }

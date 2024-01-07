@@ -15,7 +15,7 @@ export class Road {
   private readonly infinity: number;
   private readonly top: number;
   private readonly bottom: number;
-  private readonly borders: { x: number; y: number }[][];
+  public readonly borders: { x: number; y: number }[][];
 
   public constructor(x: number, width: number, laneCount: number = 3) {
     this.x = x;
