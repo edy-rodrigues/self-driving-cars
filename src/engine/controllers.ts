@@ -1,4 +1,5 @@
 import type { GraphEditor } from '../editors/graph-editor.ts';
+import { Osm } from '../math/osm.ts';
 import { Engine } from './engine.ts';
 import { Utils } from './utils.ts';
 import { World } from './world.ts';
@@ -189,6 +190,13 @@ export class Controllers {
     });
 
     confirmButton.addEventListener('click', (): void => {
+      if (textarea.value === '') {
+        alert('Paste data first!');
+        return;
+      }
+
+      Osm.parseRoads(JSON.parse(textarea.value));
+
       container.removeChild(overlay);
       container.removeChild(modal);
     });

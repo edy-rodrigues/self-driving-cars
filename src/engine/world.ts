@@ -32,6 +32,7 @@ export declare namespace IWorld {
   interface IDrawParams {
     context: CanvasRenderingContext2D;
     viewPoint: Point;
+    renderRadius?: number;
     showStartMarkings?: boolean;
   }
 }
@@ -369,7 +370,7 @@ export class World {
   }
 
   public draw(params: IWorld.IDrawParams): void {
-    const { context, viewPoint, showStartMarkings = true } = params;
+    const { context, viewPoint, showStartMarkings = true, renderRadius = 1000 } = params;
 
     this.updateLights();
 
@@ -413,7 +414,9 @@ export class World {
       this.bestCar.draw({ context, sensor: true });
     }
 
-    const items = [...this.buildings, ...this.trees];
+    const items = [...this.buildings, ...this.trees].filter(
+      (item) => item.base.distanceToPoint(viewPoint) < renderRadius,
+    );
     items.sort((a, b) => b.base.distanceToPoint(viewPoint) - a.base.distanceToPoint(viewPoint));
 
     for (const item of items) {

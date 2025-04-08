@@ -182,6 +182,14 @@ export class Utils {
     return a + (b - a) * t;
   }
 
+  public static inverseLerp(a: number, b: number, v: number): number {
+    return (v - a) / (b - a);
+  }
+
+  public static degreeToRadio(degree: number): number {
+    return (degree * Math.PI) / 180;
+  }
+
   public static lerp2D(A: Point, B: Point, t: number): Point {
     return new Point(Utils.lerp(A.x, B.x, t), Utils.lerp(A.y, B.y, t));
   }

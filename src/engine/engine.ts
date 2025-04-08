@@ -22,7 +22,7 @@ import { World } from './world.ts';
 const IAMaxSpeed = 3;
 const brainDiff = 0.2;
 const control = 'ai';
-const carsCount = 800;
+const carsCount = 50;
 
 export declare namespace IEngine {
   interface ITool {
@@ -184,22 +184,27 @@ export class Engine {
   }
 
   public static animate(time: number): void {
-    const { tools, viewport, context, world, visualizerContext, cars } = Engine;
+    const { graph, tools, viewport, context, world, visualizerContext, cars } = Engine;
 
-    for (let i = 0; i < cars.length; i++) {
-      cars[i].update(Engine.roads, []);
-    }
+    // for (let i = 0; i < cars.length; i++) {
+    //   cars[i].update(Engine.roads, []);
+    // }
 
     const bestCar = cars.find(
       (car: Car): boolean => car.fitness === Math.max(...cars.map((car) => car.fitness)),
     )!;
     Engine.bestCar = bestCar;
 
-    world.cars = cars;
-    world.bestCar = bestCar;
+    if (graph.hash() !== Engine.oldGraphHash) {
+      world.generate();
+      Engine.oldGraphHash = graph.hash();
+    }
 
-    viewport.offset.x = -bestCar.x;
-    viewport.offset.y = -bestCar.y;
+    // world.cars = cars;
+    // world.bestCar = bestCar;
+
+    // viewport.offset.x = -bestCar.x;
+    // viewport.offset.y = -bestCar.y;
 
     viewport.reset();
 
