@@ -14,6 +14,7 @@ export declare namespace ICar {
 
   interface IDrawParams {
     context: CanvasRenderingContext2D;
+    color?: string;
     sensor?: boolean;
   }
 }
@@ -23,9 +24,9 @@ export class Car {
   public x: number;
   public y: number;
   private speed: number;
-  private readonly acceleration: number;
-  private readonly maxSpeed: number;
-  private readonly friction: number;
+  private acceleration: number;
+  private maxSpeed: number;
+  private friction: number;
   public angle: number;
   private readonly width: number;
   private readonly height: number;
@@ -37,7 +38,7 @@ export class Car {
 
   private readonly controlType: IControl.TType;
   private readonly control: Control;
-  private readonly sensor?: Sensor;
+  public sensor?: Sensor;
   public brain?: NeuralNetwork;
   private readonly useBrain: boolean;
 
@@ -94,6 +95,45 @@ export class Car {
     };
   }
 
+  public load(car: Car): void {
+    this.brain = car.brain;
+    this.maxSpeed = car.maxSpeed;
+    this.friction = car.friction;
+    this.acceleration = car.acceleration;
+
+    if (car.sensor) {
+      this.sensor = new Sensor(this, {
+        rayCount: car.sensor.rayCount,
+        rayLength: car.sensor.rayLength,
+        raySpread: car.sensor.raySpread,
+        rayOffset: car.sensor.rayOffset,
+      });
+
+      console.log('load sensor', {
+        brain: car.brain,
+        maxSpeed: car.maxSpeed,
+        friction: car.friction,
+        acceleration: car.acceleration,
+        rayCount: car.sensor.rayCount,
+        rayLength: car.sensor.rayLength,
+        raySpread: car.sensor.raySpread,
+        rayOffset: car.sensor.rayOffset,
+        car: this,
+      });
+
+      // console.log('load sensor', {
+      //   brain: car.brain === this.brain,
+      //   maxSpeed: car.maxSpeed === this.maxSpeed,
+      //   friction: car.friction === this.friction,
+      //   acceleration: car.acceleration === this.acceleration,
+      //   rayCount: car.sensor.rayCount === this.sensor.rayCount,
+      //   rayLength: car.sensor.rayLength === this.sensor.rayLength,
+      //   raySpread: car.sensor.raySpread === this.sensor.raySpread,
+      //   rayOffset: car.sensor.rayOffset === this.sensor.rayOffset,
+      // });
+    }
+  }
+
   public update(roadBorders: Road['borders'], traffic: Car[]): void {
     if (!this.damaged) {
       this.move();
@@ -105,16 +145,16 @@ export class Car {
     if (this.sensor) {
       this.sensor.update(roadBorders, traffic);
 
-      const offsets = this.sensor.readings.map((reading) =>
-        reading === null ? 0 : 1 - reading.offset,
-      );
+      const offsets = this.sensor.readings
+        .map((reading) => (reading === null ? 0 : 1 - reading.offset))
+        .concat([this.speed / this.maxSpeed]);
 
       const outputs = NeuralNetwork.feedForward(offsets, this.brain!);
 
       if (this.useBrain) {
         this.control.forward = !!outputs[0];
-        this.control.right = !!outputs[1];
-        this.control.left = !!outputs[2];
+        this.control.left = !!outputs[1];
+        this.control.right = !!outputs[2];
         this.control.reverse = !!outputs[3];
       }
     }

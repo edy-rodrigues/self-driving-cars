@@ -18,21 +18,30 @@ export declare namespace ISensor {
     x: number;
     y: number;
   }
+
+  interface IConstructorOptions {
+    rayCount?: number;
+    rayLength?: number;
+    raySpread?: number;
+    rayOffset?: number;
+  }
 }
 
 export class Sensor {
   private readonly car: Car;
   public readonly rayCount: number;
-  private readonly rayLength: number;
-  private readonly raySpread: number;
+  public readonly rayLength: number;
+  public readonly raySpread: number;
+  public readonly rayOffset: number;
   private rays: [ISensor.IRay, ISensor.IRay][];
   public readings: (ISensor.ICollisionPosition | null)[];
 
-  public constructor(car: Car) {
+  public constructor(car: Car, options: ISensor.IConstructorOptions = {}) {
     this.car = car;
-    this.rayCount = 5;
-    this.rayLength = 150;
-    this.raySpread = Math.PI / 2;
+    this.rayCount = options.rayCount || 5;
+    this.rayLength = options.rayLength || 150;
+    this.raySpread = options.raySpread || Math.PI / 2;
+    this.rayOffset = options.rayOffset || 0;
 
     this.rays = [];
     this.readings = [];
@@ -103,7 +112,9 @@ export class Sensor {
           this.raySpread / 2,
           -this.raySpread / 2,
           this.rayCount === 1 ? 0.5 : i / (this.rayCount - 1),
-        ) + this.car.angle;
+        ) +
+        this.car.angle +
+        this.rayOffset;
       const start: ISensor.IRay = { x: this.car.x, y: this.car.y };
       const end: ISensor.IRay = {
         x: this.car.x - Math.sin(rayAngle) * this.rayLength,

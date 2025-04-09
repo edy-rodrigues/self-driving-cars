@@ -117,7 +117,7 @@ export class World {
     );
     newWorld.markings = world.markings.map((marking: Marking) => MarkingLoader.load(marking));
     newWorld.zoom = world.zoom;
-    newWorld.offset = new Point(world.offset.x, world.offset.y);
+    newWorld.offset = world.offset;
 
     return newWorld;
   }
@@ -129,7 +129,7 @@ export class World {
       this.envelopes.push(new Envelope(segment, this.roadWidth, this.roadRoundness));
     }
 
-    this.roadBorders = Polygon.union(this.envelopes.map((envelope: Envelope) => envelope.polygon));
+    this.roadBorders = Polygon.union(this.envelopes.map((envelope: Envelope) => envelope.poly));
     this.buildings = this.generateBuildings();
     this.trees = this.generateTrees();
 
@@ -144,7 +144,7 @@ export class World {
       tempEnvelopes.push(new Envelope(segment, this.roadWidth / 2, this.roadRoundness));
     }
 
-    return Polygon.union(tempEnvelopes.map((envelope: Envelope) => envelope.polygon));
+    return Polygon.union(tempEnvelopes.map((envelope: Envelope) => envelope.poly));
   }
 
   private generateTrees(): Tree[] {
@@ -160,7 +160,7 @@ export class World {
 
     const illegalPolygons: Polygon[] = [
       ...this.buildings.map((building: Building) => building.base),
-      ...this.envelopes.map((envelope: Envelope) => envelope.polygon),
+      ...this.envelopes.map((envelope: Envelope) => envelope.poly),
     ];
 
     const trees: Tree[] = [];
@@ -234,7 +234,7 @@ export class World {
     }
 
     const guides: Segment[] = Polygon.union(
-      tempEnvelopes.map((envelope: Envelope) => envelope.polygon),
+      tempEnvelopes.map((envelope: Envelope) => envelope.poly),
     );
 
     for (let i: number = 0; i < guides.length; i++) {
@@ -270,7 +270,7 @@ export class World {
     const bases: Polygon[] = [];
 
     for (const segment of supports) {
-      bases.push(new Envelope(segment, this.buildingWidth).polygon);
+      bases.push(new Envelope(segment, this.buildingWidth).poly);
     }
 
     const eps = 0.001;

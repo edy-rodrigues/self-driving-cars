@@ -13,23 +13,23 @@ export declare namespace IEnvelop {
 
 export class Envelope {
   public skeleton: Segment;
-  public polygon: Polygon;
+  public poly: Polygon;
 
   public constructor(skeleton?: Segment, width?: number, roundness: number = 1) {
     if (!skeleton || !width) {
       this.skeleton = new Segment(new Point(0, 0), new Point(0, 0));
-      this.polygon = new Polygon([new Point(0, 0)]);
+      this.poly = new Polygon([new Point(0, 0)]);
       return;
     }
 
     this.skeleton = skeleton;
-    this.polygon = this.generatePolygon(width, roundness);
+    this.poly = this.generatePolygon(width, roundness);
   }
 
   public static load(envelope: Envelope): Envelope {
     const newEnvelope = new Envelope();
     newEnvelope.skeleton = new Segment(envelope.skeleton.p1, envelope.skeleton.p2);
-    newEnvelope.polygon = Polygon.load(envelope.polygon);
+    newEnvelope.poly = Polygon.load(envelope.poly);
 
     return newEnvelope;
   }
@@ -37,7 +37,7 @@ export class Envelope {
   public draw(params: IEnvelop.IDrawParams): void {
     const { context, stroke, fill } = params;
 
-    this.polygon.draw({
+    this.poly.draw({
       context,
       stroke,
       fill,

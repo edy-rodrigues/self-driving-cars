@@ -40,7 +40,8 @@ export class Osm {
       for (let i = 1; i < ids.length; i++) {
         const previous = points.find((point) => point.id === ids[i - 1]);
         const current = points.find((point) => point.id === ids[i]);
-        segments.push(new Segment(current, previous));
+        const oneWay = way.tags.oneway || way.tags.lanes === 1;
+        segments.push(new Segment(current, previous, oneWay));
       }
     }
 

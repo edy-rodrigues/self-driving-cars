@@ -14,19 +14,28 @@ export declare namespace ISegment {
 export class Segment {
   public p1: Point;
   public p2: Point;
+  public oneWay: boolean;
 
-  public constructor(p1: Point, p2: Point) {
+  public constructor(p1: Point, p2: Point, oneWay = false) {
     this.p1 = p1;
     this.p2 = p2;
+    this.oneWay = oneWay;
   }
 
   public draw(params: ISegment.IDrawParams): void {
-    const { context, dash = [], width = 2, color = 'black', cap = 'butt' } = params;
+    const { context, width = 2, color = 'black', cap = 'butt' } = params;
+
+    let dash = params.dash || [];
 
     context.beginPath();
     context.lineWidth = width;
     context.strokeStyle = color;
     context.lineCap = cap;
+
+    if (this.oneWay) {
+      dash = [4, 4];
+    }
+
     context.setLineDash(dash);
     context.moveTo(this.p1.x, this.p1.y);
     context.lineTo(this.p2.x, this.p2.y);

@@ -31,7 +31,7 @@ export class Marking {
       Utils.translate(center, Utils.angle(directionVector), height / 2),
       Utils.translate(center, Utils.angle(directionVector), -height / 2),
     );
-    this.polygon = new Envelope(this.support, width, 0).polygon;
+    this.polygon = new Envelope(this.support, width, 0).poly;
   }
 
   public draw(params: IMarking.IDrawParams): void {

@@ -19,6 +19,7 @@ export class Graph {
         new Segment(
           points.find((point: Point) => point.equals(segment.p1))!,
           points.find((point: Point) => point.equals(segment.p2))!,
+          segment.oneWay,
         ),
     );
 
